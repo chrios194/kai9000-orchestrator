@@ -1,0 +1,9 @@
+# KAI-9000 .gitignore
+*.db
+*.db-journal
+__pycache__/
+*.pyc
+.env
+*.token
+*.key
+secrets/

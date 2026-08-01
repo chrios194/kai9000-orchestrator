@@ -1,0 +1,65 @@
+# KAI-9000 MCP HUB CONFIGURATION
+# Destination: ~/.openhuman/users/6a13407c7c707b2793261525/config.toml
+# Section: [mcp_client.servers]
+
+[mcp_client]
+enabled = true
+version = "0.63.9"
+
+# 1. Локальная файловая система (Termux paths для Android)
+[[mcp_client.servers]]
+name = "local-filesystem"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem",
+        "/storage/emulated/0/Download",
+        "/storage/emulated/0/Documents",
+        "/data/data/com.termux/files/home/projects"]
+
+# 2. GitHub (репозитории Kai9000Bot)
+[[mcp_client.servers]]
+name = "github-mcp"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+env = { GITHUB_PERSONAL_ACCESS_TOKEN = "PLACEHOLDER_GITHUB_TOKEN" }
+
+# 3. SQLite Memory Tree (ядро памяти)
+[[mcp_client.servers]]
+name = "sqlite-mcp"
+command = "uvx"
+args = ["mcp-server-sqlite",
+        "--db-path", "/data/data/com.termux/files/home/.openhuman/memory.db"]
+
+# 4. Brave Search (web research)
+[[mcp_client.servers]]
+name = "web-research-mcp"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-brave-search"]
+env = { BRAVE_API_KEY = "PLACEHOLDER_BRAVE_KEY" }
+
+# 5. Notion (шаблоны и базы знаний)
+[[mcp_client.servers]]
+name = "notion-mcp"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-notion"]
+env = { NOTION_API_KEY = "PLACEHOLDER_NOTION_KEY" }
+
+# 6. Google AI Studio (из папки 4 Drive - applet_access_history.json)
+[[mcp_client.servers]]
+name = "google-ai-mcp"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-googleai"]
+env = { GOOGLE_AI_API_KEY = "PLACEHOLDER_GOOGLE_AI_KEY" }
+
+# 7. Binance API (криптотрейдинг - спотовые цены)
+[[mcp_client.servers]]
+name = "binance-mcp"
+command = "python3"
+args = ["-m", "kai9000_binance_server"]
+env = { BINANCE_API_KEY = "PLACEHOLDER_BINANCE_KEY",
+        BINANCE_SECRET = "PLACEHOLDER_BINANCE_SECRET" }
+
+# 8. Polymarket (prediction markets)
+[[mcp_client.servers]]
+name = "polymarket-mcp"
+command = "python3"
+args = ["-m", "kai9000_polymarket_server"]

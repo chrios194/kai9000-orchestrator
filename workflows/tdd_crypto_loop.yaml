@@ -1,0 +1,110 @@
+# KAI-9000 Workflow 3: TDD Dev Loop + Криптомониторинг
+# Триггеры: 
+#   A) GitHub IssueAssigned → TDD цикл разработки
+#   B) Cron каждые 30 минут → Проверка здоровья криптопортфеля
+# Output A: Pull Request на GitHub
+# Output B: В vault/01-Daily/ + Telegram alert если RED
+
+id: kai-tdd-crypto-loop
+name: "KAI-9000 TDD Dev Loop + Crypto Monitor"
+trigger:
+  type: multi
+  triggers:
+    - { type: event, source: "github.issue_assigned" }
+    - { type: cron, schedule: "*/30 * * * *" }
+
+nodes:
+  # === Ветка A: TDD Development ===
+  - id: create_worktree
+    type: action
+    condition: { trigger_type: "event" }
+    tool: "git.worktree_add"
+    branch: "feature/{{issue_id}}"
+    description: "Создание изолированной Git worktree для разработки"
+
+  - id: write_failing_test
+    type: agent
+    condition: { trigger_type: "event" }
+    skill: "test-driven-development"
+    prompt: "Напиши минимальный падающий тест, воспроизводящий требование задачи: {{issue_body}}"
+    
+  - id: run_test_red
+    type: action
+    condition: { trigger_type: "event" }
+    tool: "coder.test"
+    expect_failure: true
+    description: "Запуск теста — ожидается RED (тест падает)"
+
+  - id: implement_fix
+    type: agent
+    condition: { trigger_type: "event" }
+    skill: "agent-architect"
+    prompt: |
+      Реализуй минимальный код для успешного прохождения теста.
+      Следуй архитектурным паттернам проекта (проверь AGENTS.md и существующую структуру).
+      Не добавляй лишний функционал — только то, что нужно для GREEN.
+
+  - id: run_test_green
+    type: action
+    condition: { trigger_type: "event" }
+    tool: "coder.test"
+    expect_failure: false
+    description: "Запуск теста — ожидается GREEN (тест проходит)"
+
+  - id: lint_check
+    type: action
+    condition: { trigger_type: "event" }
+    tool: "coder.lint"
+    description: "Проверка стиля кода"
+
+  - id: commit_and_pr
+    type: action
+    condition: { trigger_type: "event" }
+    tool: "git.commit_and_push"
+    message: "feat: {{issue_title}} (verified via TDD suite)"
+    pr:
+      title: "feat: {{issue_title}}"
+      body: |
+        ## Закрывает #{{issue_id}}
+        - TDD цикл: RED → GREEN → REFACTOR
+        - Тесты: ✅ Все проходят
+        - Lint: ✅ Без предупреждений
+        
+        Автоматически создано KAI-9000 Orchestrator
+      labels: ["kai9000-automated", "tdd-verified"]
+
+  # === Ветка B: Crypto Monitoring ===
+  - id: crypto_check
+    type: agent
+    condition: { trigger_type: "cron" }
+    skill: "crypto-portfolio-monitor"
+    description: "Проверка здоровья криптопортфеля"
+    inputs:
+      checks:
+        - { asset: "aUSDT", type: "depeg", threshold: 0.995 }
+        - { asset: "XAUt", type: "depeg_vs_gold", threshold: 0.02 }
+        - { asset: "XLM_PERP", type: "margin", threshold: 0.15 }
+
+  - id: evaluate_alert
+    type: action
+    condition: { trigger_type: "cron", alert_level: "!green" }
+    tool: "logic.evaluate"
+    description: "Определение уровня тревоги"
+
+  - id: send_alert
+    type: notification
+    condition: { trigger_type: "cron", alert_level: "yellow OR red" }
+    channel: "telegram"
+    priority: "{{alert_level}}"
+    message: |
+      KAI-9000 КРИПТО-АЛЕРТ [{{alert_level}}]
+      {{alert_details}}
+      Рекомендация: {{recommended_action}}
+
+  - id: log_crypto_snapshot
+    type: action
+    condition: { trigger_type: "cron" }
+    tool: "filesystem.write_file"
+    path: "~/.kai9000/vault/01-Daily/{{date}}_crypto_snapshot.md"
+    content: "{{crypto_check_output}}"
+    append: true

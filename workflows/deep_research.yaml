@@ -1,0 +1,85 @@
+# KAI-9000 Workflow 2: Autonomous Deep Research Pipeline
+# Trigger: Ручной (по запросу пользователя)
+# Output: vault/04-Research/{{topic}}_report.md
+
+id: kai-deep-research
+name: "KAI-9000 Autonomous Deep Research Pipeline"
+trigger:
+  type: manual
+  input_schema:
+    topic: "string"
+    depth: "integer"
+
+nodes:
+  - id: query_expansion
+    type: agent
+    description: "Генерация 4 независимых поисковых запросов для всестороннего анализа"
+    prompt: |
+      Сгенерируй 4 независимых поисковых запроса для всестороннего анализа темы: {{topic}}
+      Каждый запрос должен покрывать разный аспект:
+      1. Технический/научный
+      2. Рыночный/коммерческий
+      3. Практический/прикладной
+      4. Исторический контекст из памяти (если есть)
+
+  - id: parallel_fetch
+    type: parallel
+    description: "Параллельный сбор данных из 5 источников"
+    branches:
+      - id: web_search
+        tool: "mcp.web-research-mcp.search"
+        args: { query: "{{query_1}}" }
+      - id: arxiv_search
+        tool: "arxiv.search"
+        args: { query: "{{query_2}}", limit: 10 }
+      - id: github_search
+        tool: "mcp.github-mcp.search"
+        args: { query: "{{query_3}}", type: "repositories" }
+      - id: memory_recall
+        tool: "memory.search"
+        args: { query: "{{topic}}" }
+      - id: market_data
+        tool: "mcp.polymarket-mcp.search"
+        args: { query: "{{topic}}", limit: 5 }
+    on_complete: "all"
+
+  - id: cross_critique
+    type: agent
+    skill: "llm-council-deliberation"
+    description: "Stage 2: Перекрёстная критика и верификация фактов"
+    prompt: |
+      Проведи перекрёстную критику собранных данных:
+      1. Проверь каждое утверждение на наличие источника
+      2. Исключи дублирование между источниками
+      3. Отметь противоречия между источниками (если есть)
+      4. Оцени релевантность каждого источника к теме
+      5. Удали галлюцинации (утверждения без подтверждения)
+
+  - id: synthesis
+    type: agent
+    description: "Stage 3: Синтез финального отчёта"
+    prompt: |
+      На основе верифицированных данных создай исчерпывающий аналитический отчёт:
+      1. Executive Summary (3-5 предложений)
+      2. Ключевые находки с цитатами и ссылками
+      3. Дорожная карта / рекомендации
+      4. Источники (полный список URL/DOI)
+      5. Уровень уверенности по каждому утверждению (high/medium/low)
+
+  - id: save_report
+    type: action
+    tool: "filesystem.write_file"
+    path: "~/.kai9000/vault/04-Research/{{topic}}_report.md"
+    content: "{{synthesis_output}}"
+    tags: ["#research", "#{{topic}}"]
+
+  - id: save_memory
+    type: action
+    tool: "memory_store"
+    key: "research_{{topic}}_{{date}}"
+    content: "{{synthesis_output_summary}}"
+    
+  - id: notify_done
+    type: notification
+    channel: "telegram"
+    summary: "KAI-9000: Исследование '{{topic}}' завершено → vault/04-Research/"
