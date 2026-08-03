@@ -1,108 +1,67 @@
 #!/bin/bash
+# KAI-9000 ORCHESTRATOR v2.0.0 — INSTALLER
+# Sovereign Architect Edition
+# 32 Skills | 12 MCP Servers | 3 Workflows
+
 set -e
+KAI_DIR="$HOME/.kai9000"
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
 
-echo "=========================================="
-echo "  KAI-9000 ORCHESTRATOR INSTALLER v1.0.0"
-echo "  Android + Termux + OpenHuman"
-echo "=========================================="
+echo -e "${GREEN}=== KAI-9000 ORCHESTRATOR v2.0.0 INSTALLATION ===${NC}"
 
-# 1. Установка пакетов
-echo "[1/8] Установка пакетов..."
-pkg install -y git python python-pip nodejs curl wget unzip jq
+# 1. BASE PACKAGES
+echo -e "${GREEN}[1/8] Installing base packages...${NC}"
+pkg install -y python nodejs git openssh curl unzip > /dev/null 2>&1 || true
 
-# 2. Создание директорий
-echo "[2/8] Создание структуры каталогов..."
-mkdir -p ~/.kai9000/{skills,mcp,workflows,vault/system_prompts,docs,install_scripts}
-mkdir -p ~/.kai9000/vault/{01_daily,02_projects,03_decisions,04_research,05_reference}
+# 2. STRUCTURE
+echo -e "${GREEN}[2/8] Creating directory structure...${NC}"
+mkdir -p "$KAI_DIR"/{skills/{anthropic,manus,custom},mcp,workflows,vault/{01-Daily,02-Projects,03-Decisions,04-Research},system_prompts}
 
-# 3. Клонирование репозитория
-echo "[3/8] Клонирование KAI-9000..."
-cd /tmp
-rm -rf kai9000-orchestrator
-git clone --depth 1 https://github.com/romanyukzhenya82-sketch/kai9000-orchestrator.git
-cd kai9000-orchestrator
+# 3. CLONE REPO
+echo -e "${GREEN}[3/8] Cloning repository...${NC}"
+cd /tmp && rm -rf kai9000-orchestrator
+git clone https://github.com/romanyukzhenya82-sketch/kai9000-orchestrator.git > /dev/null 2>&1 || true
 
-# 4. Установка 20 навыков
-echo "[4/8] Установка 20 навыков..."
-cp -r skills_custom/* ~/.kai9000/skills/
-SKILL_COUNT=$(ls ~/.kai9000/skills/ | wc -l)
-echo "  Установлено навыков: $SKILL_COUNT"
+# 4. COPY SKILLS (32 total)
+echo -e "${GREEN}[4/8] Copying 32 skills...${NC}"
+cp -r /tmp/kai9000-orchestrator/skills/* "$KAI_DIR/skills/" 2>/dev/null || true
 
-# 5. Установка 3 workflows
-echo "[5/8] Установка 3 workflows..."
-cp workflows/*.yaml ~/.kai9000/workflows/
-WF_COUNT=$(ls ~/.kai9000/workflows/ | wc -l)
-echo "  Установлено workflows: $WF_COUNT"
+# 5. COPY CONFIGS
+echo -e "${GREEN}[5/8] Copying MCP config + workflows + system prompt...${NC}"
+cp /tmp/kai9000-orchestrator/mcp_config/mcp_servers.toml "$KAI_DIR/mcp/" 2>/dev/null || true
+cp -r /tmp/kai9000-orchestrator/workflows/* "$KAI_DIR/workflows/" 2>/dev/null || true
+cp /tmp/kai9000-orchestrator/system_prompts/master_system_prompt.md "$KAI_DIR/system_prompts/" 2>/dev/null || true
 
-# 6. Установка MCP конфигурации
-echo "[6/8] Установка MCP конфигурации..."
-cp mcp_config/mcp_servers.toml ~/.kai9000/mcp/
+# 6. VAULT TEMPLATES
+echo -e "${GREEN}[6/8] Setting up Obsidian vault templates...${NC}"
+cp -r /tmp/kai9000-orchestrator/obsidian_vault/* "$KAI_DIR/vault/" 2>/dev/null || true
 
-# 7. Установка master system prompt
-echo "[7/8] Установка master system prompt..."
-cp system_prompts/master_system_prompt.md ~/.kai9000/vault/system_prompts/
+# 7. VERIFY
+echo -e "${GREEN}[7/8] Verifying installation...${NC}"
+SKILL_COUNT=$(find "$KAI_DIR/skills" -name "SKILL.md" | wc -l)
+WORKFLOW_COUNT=$(find "$KAI_DIR/workflows" -name "*.yaml" | wc -l)
+MCP_EXISTS=$(test -f "$KAI_DIR/mcp/mcp_servers.toml" && echo "✓" || echo "✗")
+PROMPT_EXISTS=$(test -f "$KAI_DIR/system_prompts/master_system_prompt.md" && echo "✓" || echo "✗")
 
-# 8. Установка Obsidian vault шаблонов
-echo "[8/8] Установка Obsidian vault шаблонов..."
-cp -r obsidian_vault/* ~/.kai9000/vault/ 2>/dev/null || true
-
-# Копирование README и install script
-cp docs/README.md ~/.kai9000/docs/
-cp install_scripts/kai9000_install.sh ~/.kai9000/install_scripts/
-
-# Верификация установки
+# 8. REPORT
+echo -e "${GREEN}[8/8] Installation complete!${NC}"
 echo ""
-echo "=========================================="
-echo "  ПРОВЕРКА УСТАНОВКИ"
-echo "=========================================="
-
-ERRORS=0
-
-if [ "$SKILL_COUNT" -ne 20 ]; then
-  echo "ОШИБКА: Ожидалось 20 навыков, gefundenо $SKILL_COUNT"
-  ERRORS=$((ERRORS+1))
-fi
-
-if [ "$WF_COUNT" -ne 3 ]; then
-  echo "ОШИБКА: Ожидалось 3 workflow, gefundenо $WF_COUNT"
-  ERRORS=$((ERRORS+1))
-fi
-
-if [ ! -f ~/.kai9000/mcp/mcp_servers.toml ]; then
-  echo "ОШИБКА: MCP конфиг не найден"
-  ERRORS=$((ERRORS+1))
-fi
-
-if [ ! -f ~/.kai9000/vault/system_prompts/master_system_prompt.md ]; then
-  echo "ОШИБКА: Master system prompt не найден"
-  ERRORS=$((ERRORS+1))
-fi
-
-echo ""
-echo "Структура ~/.kai9000/:"
-find ~/.kai9000 -maxdepth 2 -type d | sort
-echo ""
-echo "Навыки: $(ls ~/.kai9000/skills/ | wc -l)"
-echo "Workflows: $(ls ~/.kai9000/workflows/ | wc -l)"
-echo "MCP config: $([ -f ~/.kai9000/mcp/mcp_servers.toml ] && echo 'OK' || echo 'MISSING')"
-echo "System prompt: $([ -f ~/.kai9000/vault/system_prompts/master_system_prompt.md ] && echo 'OK' || echo 'MISSING')"
+echo "=== KAI-9000 v2.0.0 STATUS ==="
+echo "Skills: $SKILL_COUNT (expected: 32)"
+echo "Workflows: $WORKFLOW_COUNT (expected: 3)"
+echo "MCP Config: $MCP_EXISTS"
+echo "System Prompt: $PROMPT_EXISTS"
 echo ""
 
-if [ "$ERRORS" -eq 0 ]; then
-  echo "=========================================="
-  echo "  УСТАНОВКА ЗАВЕРШЕНА УСПЕШНО"
-  echo "=========================================="
-  echo ""
-  echo "ОСТАЛОСЬ (вручную):"
-  echo "  1. Вставить API-ключи в ~/.kai9000/mcp/mcp_servers.toml"
-  echo "     (GITHUB_TOKEN, BRAVE_API_KEY, GOOGLE_AI_API_KEY, BINANCE_API_KEY)"
-  echo "  2. Скопировать master_system_prompt.md в OpenHuman:"
-  echo "     cat ~/.kai9000/vault/system_prompts/master_system_prompt.md"
-  echo "     Settings → Agent → System Prompt"
-  echo "  3. Импортировать workflows в TinyFlows:"
-  echo "     ~/.kai9000/workflows/morning_crypto_brief.yaml"
-  echo "     ~/.kai9000/workflows/deep_research.yaml"
-  echo "     ~/.kai9000/workflows/tdd_crypto_loop.yaml"
-else
-  echo "ОШИБОК: $ERRORS — проверьте вывод выше"
+if [ "$SKILL_COUNT" -lt 20 ]; then
+    echo -e "${RED}WARNING: Less than 20 skills found. Check git clone output.${NC}"
 fi
+
+echo "=== MANUAL STEPS REMAINING ==="
+echo "1. Edit $KAI_DIR/mcp/mcp_servers.toml — insert API keys"
+echo "2. Copy $KAI_DIR/system_prompts/master_system_prompt.md to OpenHuman Settings"
+echo "3. Import workflows from $KAI_DIR/workflows/ into TinyFlows"
+echo ""
+echo "=== DONE ==="

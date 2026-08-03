@@ -1,0 +1,9 @@
+{
+  "anthropics/skills": {"stars": 50184, "url": "https://github.com/anthropics/skills", "type": "skills"},
+  "obra/superpowers": {"url": "https://github.com/obra/superpowers", "type": "skills"},
+  "vercel-labs/agent-skills": {"url": "https://github.com/vercel-labs/agent-skills", "type": "skills"},
+  "K-Dense-AI/claude-scientific-skills": {"url": "https://github.com/K-Dense-AI/claude-scientific-skills", "type": "skills"},
+  "ComposioHQ/awesome-claude-skills": {"url": "https://github.com/ComposioHQ/awesome-claude-skills", "type": "skills"},
+  "travisvn/awesome-claude-skills": {"url": "https://github.com/travisvn/awesome-claude-skills", "type": "curated_list"},
+  "BehiSecc/awesome-claude-skills": {"url": "https://github.com/BehiSecc/awesome-claude-skills", "type": "curated_list"}
+}
