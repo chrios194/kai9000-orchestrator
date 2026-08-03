@@ -1,0 +1,169 @@
+# Hermes Foundation — конфигурация
+# Правь здесь, не в коде. Перезапуск скрипта применяет изменения.
+
+exchange:
+  name: bybit                  # bybit | binance (через ccxt)
+  market_type: linear          # linear (USDT perps) | spot
+  testnet: false
+
+scanner:
+  scan_limit: 80               # макс. пар для скана
+  min_quote_volume: 30_000_000 # минимум 24h объём USDT
+  min_oi_notional: 40_000_000  # минимум открытый интерес × цена (USDT)
+  min_vol_spike: 0.25          # минимум текущий объём / средний
+  min_price_usdt: 0.01         # фильтр по цене
+  scan_workers: 8              # потоки ThreadPoolExecutor
+
+scoring:
+  fresh_weight: 12             # бонус за свежую свечу (×3 таймфрейма)
+  vol_spike_high_threshold: 1.4
+  vol_spike_high_mult: 12
+  vol_spike_base_bonus: 8
+  vol_spike_penalty: -18
+  oi_tier_high: 500_000_000    # бонус +30
+  oi_tier_mid: 200_000_000     # бонус +22
+  oi_tier_low: 40_000_000      # бонус +12 (= min_oi_notional)
+  oi_penalty: -26
+  oi_capital_flow_max: 14
+  qv_tier_high: 250_000_000    # бонус +14
+  qv_tier_mid: 150_000_000     # бонус +10
+  qv_tier_low: 30_000_000      # бонус +6
+  qv_penalty: -10
+  spread_mult: 25000           # штраф за спред
+  spread_wide_penalty: -6      # доп. штраф если spread_pct > 0.002
+  low_price_penalty_02: -12    # price < 0.02
+  low_price_penalty_05: -6     # price < 0.05
+  imbalance_max_bonus: 12
+  oi_small_penalty: -10
+  qv_small_penalty: -8
+  trend_all_same_bonus: 30
+  trend_two_same_bonus: 16
+  trend_all_diff_penalty: -24
+  funding_align_bonus: 14
+  funding_anti_penalty: -12
+  pct4h_align_bonus: 8
+  pct4h_anti_penalty: -8
+  pct1h_align_bonus: 6
+  pct1h_anti_penalty: -6
+  pct_cross_bonus: 10
+  pct_cross_penalty: -8
+
+agents:
+  long:
+    min_bull_count: 2
+    min_oi_notional: 45_000_000
+    min_vol_spike: 1.1
+    max_spread_pct: 0.003
+    entry_atr_low: 0.15
+    entry_atr_high: 0.45
+    stop_atr_mult: 0.35
+    tp1_atr_mult: 2.0
+    tp1_rr_min: 1.6
+    tp2_atr_mult: 3.0
+    tp2_rr_min: 2.5
+    tp3_atr_mult: 4.5
+    allocation_pcts: [50, 30, 20]
+
+  short:
+    min_bear_count: 2
+    min_oi_notional: 40_000_000
+    min_vol_spike: 1.1
+    max_spread_pct: 0.003
+    entry_atr_low: 0.15
+    entry_atr_high: 0.45
+    stop_atr_mult: 0.35
+    tp1_atr_mult: 2.0
+    tp1_rr_min: 1.6
+    tp2_atr_mult: 3.0
+    tp2_rr_min: 2.5
+    tp3_atr_mult: 4.5
+    allocation_pcts: [50, 30, 20]
+
+  spot:
+    min_quote_volume: 50_000_000
+    max_spread_pct: 0.002
+    stop_atr_mult: 1.5          # stop = max(support_1h, entry - atr15 * mult)
+    tp1_atr_mult: 1.8
+
+  moonshot:
+    min_vol_spike: 3.0
+    max_price: 5.0
+    tp1_mult: 2.0               # entry × mult
+    tp2_mult: 4.0
+    lookahead_bars: 96          # 15m bars = 24h
+
+  options:
+    underlyings: [BTCUSDT, ETHUSDT]
+    funding_extreme: 0.0005
+    move_extreme_pct: 8.0
+
+  arb:
+    min_effective_profit: 0.004  # 0.4%
+    min_quote_volume: 5_000_000
+    taker_fee_per_side: 0.0004
+    cache_ttl_sec: 30
+
+risk:
+  default_account_usdt: 1_000
+  default_risk_pct: 0.01
+  default_leverage: 8
+  spot_risk_pct: 0.005
+  arb_risk_pct: 0.005
+  moonshot_risk_pct: 0.002
+
+backtest:
+  min_rr: 1.5
+  max_hold_bars: 48
+  lookback_days_default: 30
+
+trading_modes:
+  scalp:
+    min_oi_notional: 20_000_000
+    min_vol_spike: 1.5
+    max_spread_pct: 0.002
+    atr_tf: atr5
+    entry_atr_low: 0.10
+    entry_atr_high: 0.25
+    stop_atr_mult: 0.25
+    tp1_atr_mult: 0.8
+    tp1_rr_min: 1.0
+    tp2_atr_mult: 1.5
+    tp2_rr_min: 1.5
+    tp3_atr_mult: 2.5
+    allocation_pcts: [40, 35, 25]
+    leverage: 15
+    risk_pct: 0.005
+
+  intraday:
+    min_oi_notional: 40_000_000
+    min_vol_spike: 1.1
+    max_spread_pct: 0.003
+    atr_tf: atr15
+    entry_atr_low: 0.15
+    entry_atr_high: 0.45
+    stop_atr_mult: 0.35
+    tp1_atr_mult: 2.0
+    tp1_rr_min: 1.6
+    tp2_atr_mult: 3.0
+    tp2_rr_min: 2.5
+    tp3_atr_mult: 4.5
+    allocation_pcts: [50, 30, 20]
+    leverage: 8
+    risk_pct: 0.01
+
+  swing:
+    min_oi_notional: 50_000_000
+    min_vol_spike: 1.0
+    max_spread_pct: 0.004
+    atr_tf: atr4h
+    entry_atr_low: 0.20
+    entry_atr_high: 0.50
+    stop_atr_mult: 0.5
+    tp1_atr_mult: 2.5
+    tp1_rr_min: 2.0
+    tp2_atr_mult: 4.0
+    tp2_rr_min: 3.0
+    tp3_atr_mult: 6.0
+    allocation_pcts: [40, 35, 25]
+    leverage: 5
+    risk_pct: 0.015
