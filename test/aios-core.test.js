@@ -154,3 +154,32 @@ test("LLM router rejects invalid default role and tolerates malformed request co
   await aios.route("test", { channelId: "cashvolt", request: null });
   assert.equal(calls[0].model, "auto");
 });
+
+
+test("LiteLLM client enforces timeout and safely reports non-JSON errors", async () => {
+  const { createLiteLLMClient } = require("../src/llm/litellm-client");
+  const originalFetch = global.fetch;
+  try {
+    global.fetch = async () => new Response("gateway unavailable", { status: 502 });
+    const client = createLiteLLMClient({ baseUrl: "http://example.test", timeoutMs: 1000 });
+    await assert.rejects(
+      () => client.complete([{ role: "user", content: "x" }], { model: "test" }),
+      /LLM request failed: 502 gateway unavailable/
+    );
+
+    global.fetch = (_url, options) => new Promise((_, reject) => {
+      options.signal.addEventListener("abort", () => {
+        const error = new Error("aborted");
+        error.name = "AbortError";
+        reject(error);
+      });
+    });
+    const timeoutClient = createLiteLLMClient({ baseUrl: "http://example.test", timeoutMs: 5 });
+    await assert.rejects(
+      () => timeoutClient.complete([{ role: "user", content: "x" }], { model: "test" }),
+      /LLM request timed out after 5ms/
+    );
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
