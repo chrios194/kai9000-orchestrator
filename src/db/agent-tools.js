@@ -4,10 +4,10 @@ function createAgentTools(orchestrator) {
   return Object.freeze({
     listChannels: () => orchestrator.listChannels(),
     createJob: (channelId, payload) => orchestrator.createJob(channelId, payload),
-    getJob: id => orchestrator.persistence.getJob(id),
-    listJobs: channelId => orchestrator.persistence.listJobs(channelId),
-    transitionJob: (id, next) => {
-      const job = orchestrator.persistence.getJob(id);
+    getJob: async id => orchestrator.persistence.getJob(id),
+    listJobs: async channelId => orchestrator.persistence.listJobs(channelId),
+    transitionJob: async (id, next) => {
+      const job = await orchestrator.persistence.getJob(id);
       if (!job) throw new Error(`Unknown job: ${id}`);
       return orchestrator.advanceJob(job, next);
     }
