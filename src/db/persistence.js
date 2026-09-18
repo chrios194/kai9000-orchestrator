@@ -91,7 +91,11 @@ function createPersistence(options = {}) {
     await db.query(
       `INSERT INTO opportunity_analysis
        (analysis_id, run_id, channel_id, analysis, provider, model)
-       VALUES ($1,$2,$3,$4::jsonb,$5,$6)`,
+       VALUES ($1,$2,$3,$4::jsonb,$5,$6)
+       ON CONFLICT (analysis_id) DO UPDATE SET
+         analysis=EXCLUDED.analysis,
+         provider=EXCLUDED.provider,
+         model=EXCLUDED.model`,
       [item.analysisId, item.jobId, item.channelId, JSON.stringify(item.analysis), item.provider || null, item.model || null]
     );
     return { ...item };
@@ -114,7 +118,13 @@ function createPersistence(options = {}) {
     await db.query(
       `INSERT INTO review_reports
        (review_id, run_id, channel_id, reviewer, provider, model, review_type, findings)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)
+       ON CONFLICT (review_id) DO UPDATE SET
+         reviewer=EXCLUDED.reviewer,
+         provider=EXCLUDED.provider,
+         model=EXCLUDED.model,
+         review_type=EXCLUDED.review_type,
+         findings=EXCLUDED.findings`,
       [report.reviewId, report.jobId, report.channelId, report.reviewer, report.provider || null, report.model || null, report.reviewType, JSON.stringify(report.findings)]
     );
     return { ...report };
