@@ -104,3 +104,24 @@ test("provider registry executes configured provider with channel scope", async 
     /not configured/
   );
 });
+
+
+test("workflow state validation prevents malformed jobs and illegal transitions", async () => {
+  const { createState, transition } = require("../src/workflow/state-machine");
+  assert.throws(() => createState(), /channelId is required/);
+  assert.throws(() => createState({ channelId: "cashvolt", payload: [] }), /payload must be an object/);
+  const job = createState({ channelId: "cashvolt", payload: { topic: "money" } });
+  assert.equal(job.status, "queued");
+  const researching = transition(job, "researching");
+  assert.equal(researching.status, "researching");
+  assert.throws(() => transition(researching, "published"), /Invalid workflow transition/);
+  assert.throws(() => transition({ status: "queued" }, "researching"), /channelId is required/);
+});
+
+test("provider registry rejects unknown provider names", async () => {
+  const aios = createAIOS();
+  await assert.rejects(
+    () => aios.integrations.providers.execute("unknown", {}, { channelId: "cashvolt" }),
+    /Unknown integration provider/
+  );
+});
