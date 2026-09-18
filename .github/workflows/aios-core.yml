@@ -5,16 +5,45 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "Enable verbose test diagnostics"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aios-core-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm run syntax
-      - run: npm test
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify syntax
+        run: npm run syntax
+
+      - name: Verify migration script
+        run: npm run migrate
+
+      - name: Run tests
+        run: npm test
+        env:
+          NODE_OPTIONS: ${{ inputs.debug && '--trace-uncaught --trace-warnings' || '' }}
