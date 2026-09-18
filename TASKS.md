@@ -9,8 +9,12 @@ Complete and verify the central AIOS orchestration workflow.
 - [x] Provider-neutral integration registry
 - [x] Research, opportunity, review, and content-brief persistence paths
 - [x] GitHub Actions workflow configured
+- [x] Runtime validation hardened for workflow state and channel-scoped inputs
+- [x] LLM client hardened with timeout, safe error parsing, and optional request fields
+- [x] Neon analysis/review writes made idempotent
+- [x] Provider registry rejects unknown providers
+- [x] CI workflow includes syntax, schema verification, and tests
 - [ ] GitHub Actions run reports passing syntax and tests
-- [x] CI hardened with manual debug input, read-only workflow permissions, timeout, concurrency, syntax + migration verification + tests
 - [ ] Enable/confirm GitHub Actions on this fork and execute the first run
 
 ## Workflow
@@ -23,15 +27,25 @@ Triggers:
 
 CI steps:
 1. Checkout repository
-2. Install Node 20
-3. `npm install`
-4. `npm run syntax`
+2. Install Node 20 dependencies
+3. `npm run syntax`
+4. `npm run migrate`
 5. `npm test`
+
+## Current blocker
+The repository is a fork. GitHub reports no workflow runs and no commit statuses for the latest commits. Forked repositories do not run Actions by default until Actions is enabled for the fork. The connected GitHub tooling can inspect and modify repository files but cannot dispatch a new workflow run from this session.
+
+Manual execution:
+1. Enable GitHub Actions for the fork under repository Settings → Actions → General.
+2. Open the AIOS Core workflow.
+3. Run workflow on `main`.
+4. After the run exists, inspect its job and logs before marking CI complete.
 
 ## Constraints
 - Preserve independent channel isolation.
 - Do not expose or commit credentials.
 - Do not modify the Neon schema without explicit approval.
+- Do not claim CI success until GitHub reports a completed run.
 
 ## Note
 GitHub Issues are disabled for this repository, so this task is tracked in-repository instead of as an Issue.
