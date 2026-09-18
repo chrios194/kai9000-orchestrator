@@ -1,6 +1,7 @@
 const { createState, transition } = require("./state-machine");
 const { createPersistence } = require("../db/persistence");
 const { createRouter } = require("../llm/router");
+const { assertExecutionContext } = require("./execution-context");
 
 function createOrchestrator(options = {}) {
   const persistence = options.persistence || createPersistence(options);
@@ -66,6 +67,12 @@ function createOrchestrator(options = {}) {
   }
 
   async function route(task, context = {}) {
+    if (context.jobId) {
+      const job = await persistence.getJob(context.jobId);
+      assertExecutionContext(context, job && job.channelId);
+    } else {
+      assertExecutionContext(context);
+    }
     return router.complete(task, context);
   }
 
