@@ -10,6 +10,8 @@ Complete and verify the central AIOS orchestration workflow.
 - [x] Research, opportunity, review, and content-brief persistence paths
 - [x] GitHub Actions workflow configured
 - [ ] GitHub Actions run reports passing syntax and tests
+- [x] CI hardened with manual debug input, read-only workflow permissions, timeout, concurrency, syntax + migration verification + tests
+- [ ] Enable/confirm GitHub Actions on this fork and execute the first run
 
 ## Workflow
 File: `.github/workflows/aios-core.yml`
