@@ -73,3 +73,34 @@ test("integration adapters preserve channel context", async () => {
   assert.equal(result.channelId, "cashvolt");
   assert.equal(result.status, "ready");
 });
+
+test("provider registry executes configured provider with channel scope", async () => {
+  const calls = [];
+  const aios = createAIOS({
+    integrations: {
+      providers: {
+        research: {
+          async execute(input, context) {
+            calls.push({ input, context });
+            return { ok: true, channelId: context.channelId };
+          }
+        }
+      }
+    }
+  });
+  const result = await aios.integrations.providers.execute(
+    "research",
+    { query: "viral topics" },
+    { channelId: "cashvolt" }
+  );
+  assert.deepEqual(result, { ok: true, channelId: "cashvolt" });
+  assert.equal(calls[0].context.channelId, "cashvolt");
+  await assert.rejects(
+    () => aios.integrations.providers.execute("research", {}, {}),
+    /channelId is required/
+  );
+  await assert.rejects(
+    () => aios.integrations.providers.execute("media", {}, { channelId: "cashvolt" }),
+    /not configured/
+  );
+});
