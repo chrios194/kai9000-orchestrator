@@ -87,7 +87,42 @@ function createOrchestrator(options = {}) {
     return persistence.saveReviewReport({ ...report, jobId });
   }
 
-  return { registerChannel, listChannels, createJob, advanceJob, approveJob, route, research, analyzeOpportunity, review, persistence, router };
+  async function saveContentBrief(jobId, brief) {
+    const job = await persistence.getJob(jobId);
+    assertJobChannel(job, brief.channelId);
+    return persistence.saveContentBrief({ ...brief, jobId });
+  }
+
+  async function listResearchSources(jobId, channelId) {
+    const job = await persistence.getJob(jobId);
+    assertJobChannel(job, channelId || job.channelId);
+    return persistence.listResearchSources(jobId, job.channelId);
+  }
+
+  async function listOpportunityAnalyses(jobId, channelId) {
+    const job = await persistence.getJob(jobId);
+    assertJobChannel(job, channelId || job.channelId);
+    return persistence.listOpportunityAnalyses(jobId, job.channelId);
+  }
+
+  async function listReviewReports(jobId, channelId) {
+    const job = await persistence.getJob(jobId);
+    assertJobChannel(job, channelId || job.channelId);
+    return persistence.listReviewReports(jobId, job.channelId);
+  }
+
+  async function listContentBriefs(jobId, channelId) {
+    const job = await persistence.getJob(jobId);
+    assertJobChannel(job, channelId || job.channelId);
+    return persistence.listContentBriefs(jobId, job.channelId);
+  }
+
+  return {
+    registerChannel, listChannels, createJob, advanceJob, approveJob, route,
+    research, analyzeOpportunity, review, saveContentBrief,
+    listResearchSources, listOpportunityAnalyses, listReviewReports, listContentBriefs,
+    persistence, router
+  };
 }
 
 module.exports = { createOrchestrator };
