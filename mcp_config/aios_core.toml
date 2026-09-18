@@ -1,0 +1,30 @@
+# AIOS Core MCP profile
+# This is the canonical planning profile. Credentials are injected at runtime.
+#
+# CORE
+# - filesystem: controlled local workspace access
+# - fetch: controlled web retrieval
+# - memory: persistent orchestration memory
+# - sequential-thinking: structured reasoning support
+#
+# EXTERNAL ADAPTERS
+# - github: use the connected GitHub integration; do not duplicate credentials here
+# - neon: use the connected Neon integration
+# - vercel: use the connected Vercel integration
+# - notion: use the connected Notion integration
+#
+# OPTIONAL / DEFERRED
+# - provider-specific search, email, workspace, marketing, crypto and trading servers
+#
+# IMPORTANT
+# Official MCP reference servers are reference implementations, not automatically
+# production-ready. Validate each server with MCP Inspector before promotion.
+#
+# Current official reference server package names include:
+# @modelcontextprotocol/server-filesystem
+# @modelcontextprotocol/server-memory
+# @modelcontextprotocol/server-sequential-thinking
+# mcp-server-fetch
+#
+# Do not enable mcp-server-git in the core profile until its current security
+# advisories are reviewed and the required fixes/version are verified.
