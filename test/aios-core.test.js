@@ -22,6 +22,9 @@ test("AIOS persists structured workflow records with channel isolation", async (
   assert.equal((await aios.listOpportunityAnalyses(first.id)).length, 1);
   assert.equal((await aios.listReviewReports(first.id)).length, 1);
   assert.equal((await aios.listContentBriefs(first.id)).length, 1);
+
+  const event = await aios.integrations.events.record(first.id, "research.completed", { sourceCount: 1 });
+  assert.equal(event.channelId, "cashvolt");
   assert.equal((await aios.listResearchSources(second.id)).length, 0);
 
   await assert.rejects(
