@@ -27,7 +27,10 @@ function canTransition(from, to) {
 }
 
 function transition(state, next) {
-  const current = state && state.status ? state.status : "queued";
+  if (!state || typeof state !== "object") throw new Error("Workflow state is required");
+  if (!state.channelId) throw new Error("Workflow state channelId is required");
+  const current = state.status;
+  if (!STATES.includes(current)) throw new Error(`Unknown workflow state: ${current}`);
   if (!canTransition(current, next)) {
     throw new Error(`Invalid workflow transition: ${current} -> ${next}`);
   }
@@ -35,13 +38,18 @@ function transition(state, next) {
 }
 
 function createState(input = {}) {
+  if (!input.channelId) throw new Error("channelId is required");
+  if (input.payload != null && (typeof input.payload !== "object" || Array.isArray(input.payload))) {
+    throw new Error("payload must be an object");
+  }
+  const now = new Date().toISOString();
   return {
     id: input.id || `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    channelId: input.channelId || null,
+    channelId: input.channelId,
     status: "queued",
     payload: input.payload || {},
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: now,
+    updatedAt: now
   };
 }
 
