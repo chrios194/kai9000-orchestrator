@@ -18,16 +18,16 @@ function createOrchestrator(options = {}) {
     return Array.from(channels.values()).map(channel => ({ ...channel }));
   }
 
-  function createJob(channelId, payload = {}) {
+  async function createJob(channelId, payload = {}) {
     if (!channels.has(channelId)) throw new Error(`Unknown channel: ${channelId}`);
     const state = createState({ channelId, payload });
-    persistence.saveJob(state);
+    await persistence.saveJob(state);
     return state;
   }
 
-  function advanceJob(job, next) {
+  async function advanceJob(job, next) {
     const updated = transition(job, next);
-    persistence.saveJob(updated);
+    await persistence.saveJob(updated);
     return updated;
   }
 
