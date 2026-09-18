@@ -20,6 +20,10 @@ function createOrchestrator(options = {}) {
     return Array.from(channels.values()).map(channel => ({ ...channel }));
   }
 
+  function assertJobChannel(job, channelId) {
+    if (!job || !channelId || job.channelId !== channelId) throw new Error("Job/channel mismatch");
+  }
+
   async function createJob(channelId, payload = {}) {
     if (!channels.has(channelId)) throw new Error(`Unknown channel: ${channelId}`);
     const state = createState({ channelId, payload });
@@ -65,7 +69,25 @@ function createOrchestrator(options = {}) {
     return router.complete(task, context);
   }
 
-  return { registerChannel, listChannels, createJob, advanceJob, approveJob, route, persistence, router };
+  async function research(jobId, source) {
+    const job = await persistence.getJob(jobId);
+    assertJobChannel(job, source.channelId);
+    return persistence.saveResearchSource({ ...source, jobId });
+  }
+
+  async function analyzeOpportunity(jobId, item) {
+    const job = await persistence.getJob(jobId);
+    assertJobChannel(job, item.channelId);
+    return persistence.saveOpportunityAnalysis({ ...item, jobId });
+  }
+
+  async function review(jobId, report) {
+    const job = await persistence.getJob(jobId);
+    assertJobChannel(job, report.channelId);
+    return persistence.saveReviewReport({ ...report, jobId });
+  }
+
+  return { registerChannel, listChannels, createJob, advanceJob, approveJob, route, research, analyzeOpportunity, review, persistence, router };
 }
 
 module.exports = { createOrchestrator };
