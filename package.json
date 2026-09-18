@@ -1,0 +1,19 @@
+{
+  "name": "aios-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Central orchestration core for isolated AI content operations",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test",
+    "syntax": "node --check src/index.js && node --check src/workflow/state-machine.js && node --check src/workflow/orchestrator.js && node --check src/db/client.js && node --check src/db/persistence.js && node --check src/db/agent-tools.js && node --check src/llm/litellm-client.js && node --check src/llm/router.js && node --check src/llm/index.js && node --check scripts/migrate.js",
+    "migrate": "node scripts/migrate.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
+    "@neon/tools": "^1.1.1"
+  }
+}
