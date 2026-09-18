@@ -2,6 +2,10 @@ const { createDbClient } = require("./client");
 
 function createPersistence(options = {}) {
   const jobs = new Map();
+  const briefs = new Map();
+  const researchSources = new Map();
+  const opportunityAnalyses = new Map();
+  const reviewReports = new Map();
   const db = options.db || createDbClient(options);
   const useNeon = options.useNeon !== false && db.configured;
 
@@ -58,6 +62,7 @@ function createPersistence(options = {}) {
 
   async function saveResearchSource(source) {
     if (!source || !source.sourceId || !source.jobId || !source.channelId) throw new Error("sourceId, jobId and channelId are required");
+    researchSources.set(source.sourceId, { ...source });
     if (!useNeon) return { ...source };
     await db.query(
       `INSERT INTO research_sources
@@ -69,8 +74,19 @@ function createPersistence(options = {}) {
     return { ...source };
   }
 
+  async function listResearchSources(jobId, channelId) {
+    if (useNeon) {
+      const rows = channelId
+        ? await db.query("SELECT source_id AS \"sourceId\", run_id AS \"jobId\", channel_id AS \"channelId\", source_uri AS \"sourceUri\", title, source_type AS \"sourceType\", provenance, created_at AS \"createdAt\" FROM research_sources WHERE run_id=$1 AND channel_id=$2 ORDER BY created_at DESC", [jobId, channelId])
+        : await db.query("SELECT source_id AS \"sourceId\", run_id AS \"jobId\", channel_id AS \"channelId\", source_uri AS \"sourceUri\", title, source_type AS \"sourceType\", provenance, created_at AS \"createdAt\" FROM research_sources WHERE run_id=$1 ORDER BY created_at DESC", [jobId]);
+      return rows;
+    }
+    return Array.from(researchSources.values()).filter(item => item.jobId === jobId && (!channelId || item.channelId === channelId));
+  }
+
   async function saveOpportunityAnalysis(item) {
     if (!item || !item.analysisId || !item.jobId || !item.channelId || item.analysis == null) throw new Error("analysisId, jobId, channelId and analysis are required");
+    opportunityAnalyses.set(item.analysisId, { ...item });
     if (!useNeon) return { ...item };
     await db.query(
       `INSERT INTO opportunity_analysis
@@ -81,8 +97,19 @@ function createPersistence(options = {}) {
     return { ...item };
   }
 
+  async function listOpportunityAnalyses(jobId, channelId) {
+    if (useNeon) {
+      const rows = channelId
+        ? await db.query("SELECT analysis_id AS \"analysisId\", run_id AS \"jobId\", channel_id AS \"channelId\", analysis, provider, model, created_at AS \"createdAt\" FROM opportunity_analysis WHERE run_id=$1 AND channel_id=$2 ORDER BY created_at DESC", [jobId, channelId])
+        : await db.query("SELECT analysis_id AS \"analysisId\", run_id AS \"jobId\", channel_id AS \"channelId\", analysis, provider, model, created_at AS \"createdAt\" FROM opportunity_analysis WHERE run_id=$1 ORDER BY created_at DESC", [jobId]);
+      return rows;
+    }
+    return Array.from(opportunityAnalyses.values()).filter(item => item.jobId === jobId && (!channelId || item.channelId === channelId));
+  }
+
   async function saveReviewReport(report) {
     if (!report || !report.reviewId || !report.jobId || !report.channelId || !report.reviewer || !report.reviewType || report.findings == null) throw new Error("reviewId, jobId, channelId, reviewer, reviewType and findings are required");
+    reviewReports.set(report.reviewId, { ...report });
     if (!useNeon) return { ...report };
     await db.query(
       `INSERT INTO review_reports
@@ -91,6 +118,39 @@ function createPersistence(options = {}) {
       [report.reviewId, report.jobId, report.channelId, report.reviewer, report.provider || null, report.model || null, report.reviewType, JSON.stringify(report.findings)]
     );
     return { ...report };
+  }
+
+  async function listReviewReports(jobId, channelId) {
+    if (useNeon) {
+      const rows = channelId
+        ? await db.query("SELECT review_id AS \"reviewId\", run_id AS \"jobId\", channel_id AS \"channelId\", reviewer, provider, model, review_type AS \"reviewType\", findings, created_at AS \"createdAt\" FROM review_reports WHERE run_id=$1 AND channel_id=$2 ORDER BY created_at DESC", [jobId, channelId])
+        : await db.query("SELECT review_id AS \"reviewId\", run_id AS \"jobId\", channel_id AS \"channelId\", reviewer, provider, model, review_type AS \"reviewType\", findings, created_at AS \"createdAt\" FROM review_reports WHERE run_id=$1 ORDER BY created_at DESC", [jobId]);
+      return rows;
+    }
+    return Array.from(reviewReports.values()).filter(item => item.jobId === jobId && (!channelId || item.channelId === channelId));
+  }
+
+  async function saveContentBrief(brief) {
+    if (!brief || !brief.briefId || !brief.jobId || !brief.channelId || brief.brief == null) throw new Error("briefId, jobId, channelId and brief are required");
+    briefs.set(brief.briefId, { ...brief });
+    if (!useNeon) return { ...brief };
+    await db.query(
+      `INSERT INTO content_briefs (brief_id, run_id, channel_id, brief)
+       VALUES ($1,$2,$3,$4::jsonb)
+       ON CONFLICT (brief_id) DO UPDATE SET brief=EXCLUDED.brief`,
+      [brief.briefId, brief.jobId, brief.channelId, JSON.stringify(brief.brief)]
+    );
+    return { ...brief };
+  }
+
+  async function listContentBriefs(jobId, channelId) {
+    if (useNeon) {
+      const rows = channelId
+        ? await db.query("SELECT brief_id AS \"briefId\", run_id AS \"jobId\", channel_id AS \"channelId\", brief, created_at AS \"createdAt\" FROM content_briefs WHERE run_id=$1 AND channel_id=$2 ORDER BY created_at DESC", [jobId, channelId])
+        : await db.query("SELECT brief_id AS \"briefId\", run_id AS \"jobId\", channel_id AS \"channelId\", brief, created_at AS \"createdAt\" FROM content_briefs WHERE run_id=$1 ORDER BY created_at DESC", [jobId]);
+      return rows;
+    }
+    return Array.from(briefs.values()).filter(item => item.jobId === jobId && (!channelId || item.channelId === channelId));
   }
 
   async function getJob(id) {
@@ -110,7 +170,14 @@ function createPersistence(options = {}) {
     return rows;
   }
 
-  return { saveChannel, saveJob, saveWorkflowEvent, saveApproval, saveResearchSource, saveOpportunityAnalysis, saveReviewReport, getJob, listJobs, db, useNeon };
+  return {
+    saveChannel, saveJob, saveWorkflowEvent, saveApproval,
+    saveResearchSource, listResearchSources,
+    saveOpportunityAnalysis, listOpportunityAnalyses,
+    saveReviewReport, listReviewReports,
+    saveContentBrief, listContentBriefs,
+    getJob, listJobs, db, useNeon
+  };
 }
 
 module.exports = { createPersistence };
