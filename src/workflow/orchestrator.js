@@ -77,24 +77,28 @@ function createOrchestrator(options = {}) {
   }
 
   async function research(jobId, source) {
+    if (!source || !source.channelId) throw new Error("source.channelId is required");
     const job = await persistence.getJob(jobId);
     assertJobChannel(job, source.channelId);
     return persistence.saveResearchSource({ ...source, jobId });
   }
 
   async function analyzeOpportunity(jobId, item) {
+    if (!item || !item.channelId) throw new Error("item.channelId is required");
     const job = await persistence.getJob(jobId);
     assertJobChannel(job, item.channelId);
     return persistence.saveOpportunityAnalysis({ ...item, jobId });
   }
 
   async function review(jobId, report) {
+    if (!report || !report.channelId) throw new Error("report.channelId is required");
     const job = await persistence.getJob(jobId);
     assertJobChannel(job, report.channelId);
     return persistence.saveReviewReport({ ...report, jobId });
   }
 
   async function saveContentBrief(jobId, brief) {
+    if (!brief || !brief.channelId) throw new Error("brief.channelId is required");
     const job = await persistence.getJob(jobId);
     assertJobChannel(job, brief.channelId);
     return persistence.saveContentBrief({ ...brief, jobId });
