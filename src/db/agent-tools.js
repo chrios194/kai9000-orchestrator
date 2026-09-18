@@ -13,8 +13,13 @@ function createAgentTools(orchestrator) {
     },
     approveJob: (id, approvedBy) => orchestrator.approveJob(id, approvedBy),
     saveResearchSource: source => orchestrator.persistence.saveResearchSource(source),
+    listResearchSources: (jobId, channelId) => orchestrator.listResearchSources(jobId, channelId),
     saveOpportunityAnalysis: item => orchestrator.persistence.saveOpportunityAnalysis(item),
-    saveReviewReport: report => orchestrator.persistence.saveReviewReport(report)
+    listOpportunityAnalyses: (jobId, channelId) => orchestrator.listOpportunityAnalyses(jobId, channelId),
+    saveReviewReport: report => orchestrator.persistence.saveReviewReport(report),
+    listReviewReports: (jobId, channelId) => orchestrator.listReviewReports(jobId, channelId),
+    saveContentBrief: (jobId, brief) => orchestrator.saveContentBrief(jobId, brief),
+    listContentBriefs: (jobId, channelId) => orchestrator.listContentBriefs(jobId, channelId)
   });
 }
 
