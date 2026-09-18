@@ -71,7 +71,15 @@ test("integration adapters preserve channel context", async () => {
     { channelId: "cashvolt" }
   );
   assert.equal(result.channelId, "cashvolt");
-  assert.equal(result.status, "ready");
+  assert.equal(result.status, "unconfigured");
+
+  const configured = createAIOS({
+    research: {
+      async execute(input, context) { return { ok: true, input, channelId: context.channelId }; }
+    }
+  });
+  const delegated = await configured.integrations.research.execute({ query: "x" }, { channelId: "cashvolt" });
+  assert.deepEqual(delegated, { ok: true, input: { query: "x" }, channelId: "cashvolt" });
 });
 
 test("provider registry executes configured provider with channel scope", async () => {
@@ -124,4 +132,25 @@ test("provider registry rejects unknown provider names", async () => {
     () => aios.integrations.providers.execute("unknown", {}, { channelId: "cashvolt" }),
     /Unknown integration provider/
   );
+});
+
+
+test("LLM router rejects invalid default role and tolerates malformed request context", async () => {
+  assert.throws(
+    () => createAIOS({ defaultRole: "missing" }),
+    /Unknown default LLM role/
+  );
+
+  const calls = [];
+  const aios = createAIOS({
+    client: {
+      async complete(messages, request) {
+        calls.push(request);
+        return { ok: true };
+      }
+    }
+  });
+  await aios.registerChannel({ id: "cashvolt", name: "CashVolt" });
+  await aios.route("test", { channelId: "cashvolt", request: null });
+  assert.equal(calls[0].model, "auto");
 });
