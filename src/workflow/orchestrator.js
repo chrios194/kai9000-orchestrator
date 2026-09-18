@@ -40,7 +40,12 @@ function createOrchestrator(options = {}) {
   }
 
   async function advanceJob(job, next) {
-    const updated = transition(job, next);
+    if (!job || !job.id) throw new Error("job.id is required");
+    const stored = await persistence.getJob(job.id);
+    if (!stored) throw new Error(`Unknown job: ${job.id}`);
+    assertJobChannel(stored, job.channelId);
+    if (stored.status !== job.status) throw new Error("Stale job state");
+    const updated = transition(stored, next);
     await persistence.saveJob(updated);
     await persistence.saveWorkflowEvent({
       eventId: `${updated.id}:${updated.updatedAt}`,
@@ -69,7 +74,8 @@ function createOrchestrator(options = {}) {
   async function route(task, context = {}) {
     if (context.jobId) {
       const job = await persistence.getJob(context.jobId);
-      assertExecutionContext(context, job && job.channelId);
+      if (!job) throw new Error(`Unknown job: ${context.jobId}`);
+      assertExecutionContext(context, job.channelId);
     } else {
       assertExecutionContext(context);
     }
@@ -106,24 +112,28 @@ function createOrchestrator(options = {}) {
 
   async function listResearchSources(jobId, channelId) {
     const job = await persistence.getJob(jobId);
+    if (!job) throw new Error(`Unknown job: ${jobId}`);
     assertJobChannel(job, channelId || job.channelId);
     return persistence.listResearchSources(jobId, job.channelId);
   }
 
   async function listOpportunityAnalyses(jobId, channelId) {
     const job = await persistence.getJob(jobId);
+    if (!job) throw new Error(`Unknown job: ${jobId}`);
     assertJobChannel(job, channelId || job.channelId);
     return persistence.listOpportunityAnalyses(jobId, job.channelId);
   }
 
   async function listReviewReports(jobId, channelId) {
     const job = await persistence.getJob(jobId);
+    if (!job) throw new Error(`Unknown job: ${jobId}`);
     assertJobChannel(job, channelId || job.channelId);
     return persistence.listReviewReports(jobId, job.channelId);
   }
 
   async function listContentBriefs(jobId, channelId) {
     const job = await persistence.getJob(jobId);
+    if (!job) throw new Error(`Unknown job: ${jobId}`);
     assertJobChannel(job, channelId || job.channelId);
     return persistence.listContentBriefs(jobId, job.channelId);
   }
