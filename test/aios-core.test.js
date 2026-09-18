@@ -32,3 +32,44 @@ test("AIOS persists structured workflow records with channel isolation", async (
     /Job\/channel mismatch/
   );
 });
+
+
+test("LLM routing selects role model and rejects missing or cross-channel context", async () => {
+  const calls = [];
+  const client = {
+    async complete(messages, request) {
+      calls.push({ messages, request });
+      return { ok: true, model: request.model };
+    }
+  };
+  const aios = createAIOS({
+    client,
+    models: { researcher: "research-model", writer: "writer-model", fallback: "fallback-model" }
+  });
+  await aios.registerChannel({ id: "cashvolt", name: "CashVolt" });
+  await aios.registerChannel({ id: "channel-2", name: "Channel 2" });
+  const job = await aios.createJob("cashvolt", { topic: "money" });
+
+  const result = await aios.route("research task", { channelId: "cashvolt", jobId: job.id, role: "researcher" });
+  assert.equal(result.model, "research-model");
+  assert.equal(calls[0].request.model, "research-model");
+
+  await assert.rejects(
+    () => aios.route("bad", { channelId: "channel-2", jobId: job.id, role: "writer" }),
+    /Execution context\/channel mismatch/
+  );
+  await assert.rejects(
+    () => aios.route("bad", { role: "writer" }),
+    /channelId is required/
+  );
+});
+
+test("integration adapters preserve channel context", async () => {
+  const aios = createAIOS();
+  const result = await aios.integrations.research.execute(
+    { query: "trends" },
+    { channelId: "cashvolt" }
+  );
+  assert.equal(result.channelId, "cashvolt");
+  assert.equal(result.status, "ready");
+});
