@@ -32,6 +32,9 @@ CI steps:
 4. `npm run migrate`
 5. `npm test`
 
+## Hardening completed
+The checklist items covering routing, provider/integration boundaries, persistence, LLM client handling, Neon idempotency, provider validation, and CI configuration have been hardened with additional validation and regression tests. CI is still the final external verification gate.
+
 ## Current blocker
 The repository is a fork. GitHub reports no workflow runs and no commit statuses for the latest commits. Forked repositories do not run Actions by default until Actions is enabled for the fork. The connected GitHub tooling can inspect and modify repository files but cannot dispatch a new workflow run from this session.
 
