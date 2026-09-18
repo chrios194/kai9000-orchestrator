@@ -1,8 +1,8 @@
 function createExecutionContext(channelId, values = {}) {
   if (!channelId) throw new Error("channelId is required");
   return Object.freeze({
-    channelId,
-    ...values
+    ...values,
+    channelId
   });
 }
 
