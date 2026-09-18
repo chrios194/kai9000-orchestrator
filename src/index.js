@@ -1,7 +1,10 @@
 const { createOrchestrator } = require("./workflow/orchestrator");
+const { createIntegrations } = require("./integrations");
 
 function createAIOS(options = {}) {
-  return createOrchestrator(options);
+  const orchestrator = createOrchestrator(options);
+  const integrations = createIntegrations(orchestrator, options.integrations || {});
+  return Object.assign(orchestrator, { integrations });
 }
 
 module.exports = { createAIOS, createOrchestrator };
