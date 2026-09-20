@@ -45,7 +45,7 @@ function createOrchestrator(options = {}) {
     if (!stored) throw new Error(`Unknown job: ${job.id}`);
     assertJobChannel(stored, job.channelId);
     if (stored.status !== job.status) throw new Error("Stale job state");
-    const updated = transition(stored, next);
+    if (next === "publishing" && stored.approvalStatus !== "APPROVED") {\n      throw new Error("Human approval is required before publishing");\n    }\n    const updated = transition(stored, next);
     await persistence.saveJob(updated);
     await persistence.saveWorkflowEvent({
       eventId: `${updated.id}:${updated.updatedAt}`,
