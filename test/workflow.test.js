@@ -41,22 +41,18 @@ test("workflow remains channel-scoped and requires approval before publishing", 
   await orchestrator.registerChannel({ id: "b", name: "B" });
 
   const jobA = await orchestrator.createJob("a", { topic: "x" });
-  assert.throws(() => orchestrator.advanceJob(jobA, "researching"), /Promise/);
-
   const researching = await orchestrator.advanceJob(jobA, "researching");
   const planning = await orchestrator.advanceJob(researching, "planning");
   const generating = await orchestrator.advanceJob(planning, "generating");
   const reviewing = await orchestrator.advanceJob(generating, "reviewing");
 
-  await assert.rejects(() => orchestrator.advanceJob(reviewing, "approved"), /Promise/);
+  await assert.rejects(() => orchestrator.advanceJob(reviewing, "approved"), /Invalid workflow transition/);
   await assert.rejects(() => orchestrator.advanceJob(reviewing, "publishing"), /Human approval is required/);
 
-  await orchestrator.approveJob(reviewing.id, "human");
-  const approved = await persistence.getJob(reviewing.id);
+  const approved = await orchestrator.approveJob(reviewing.id, "human");
   assert.equal(approved.approvalStatus, "APPROVED");
 
-  const publishedPath = await orchestrator.advanceJob(approved, "approved");
-  const publishing = await orchestrator.advanceJob(publishedPath, "publishing");
+  const publishing = await orchestrator.advanceJob(approved, "publishing");
   assert.equal(publishing.status, "publishing");
 
   await assert.rejects(
