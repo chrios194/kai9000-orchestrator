@@ -29,7 +29,7 @@ function createPersistence(options = {}) {
         `INSERT INTO workflow_runs (run_id, channel_id, current_state, approval_status, created_at, updated_at)
          VALUES ($1,$2,$3,'PENDING',$4,$5)
          ON CONFLICT (run_id) DO UPDATE SET current_state=EXCLUDED.current_state, updated_at=EXCLUDED.updated_at`,
-        [job.id, job.channelId, job.status, job.createdAt, job.updatedAt]
+        [job.id, job.channelId, job.status, job.approvalStatus || "PENDING", job.createdAt, job.updatedAt]
       );
     }
     jobs.set(job.id, { ...job });
